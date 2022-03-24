@@ -1,0 +1,231 @@
+\section{Reinforcement Learning Based Adaptive Hyperbolic Graph Neural Network}\label{section 4}
+
+In this section, we introduce the proposed RAHGNN, an Adaptive Hyperbolic Graph Neural Network, for node hyperbolic representation learning. 
+The overall architecture of RAHGNN is shown in Figure~\ref{framework}. 
+We design the HGNN module to learn the node representation in hyperbolic space with a given curvature, and design the adaptive curvature exploration module to explore the curvature of hyperbolic space which can get the maximum reward reward from downstream task.
+Then, we present a collaborative reinforcement learning framework with two agents  Hyperbolic Graph Neural Network Agent (HGNN-Agent) and the Adaptive Curvature Exploration agent (ACE-Agent) satisfying Nash equilibrium. 
+
+\subsection{Hyperbolic Graph Neural Network Agent}
+The goal of Hyperbolic Graph Neural Network Agent (HGNN-Agent) is to learn the fusing representation of graph structure and node features with a given curvature. 
+It focuses on how to integrate the structure information and node features of a graph. 
+
+\subsubsection{HGNN with Variable Curvature}
+Though many hyperbolic embedding methods using hyperboloid (Lorentz) models have proved their success in feature representation, they are mostly based on the assumption that the hyperboloid has a constant curvature. 
+Therefore, to achieve our goal, we need to extend the hyperbolic graph neural network into a variable curvature version.
+A hyperbolic graph neural network layer with variable curvature consists of the three operations as follows:
+
+\paragraph{Hyperbolic Activation with Variable Curvature}
+For graph node Euclidean embeddings $x = (x_1, x_2, \dots, x_n) \in \mathcal{R}^{n} $, we first transform the $n$-dimensional vector to the $(n+1)$-dimensional space in pseudo-polar coordinate as follows:
+\begin{equation}\label{equ:7}
+    x \rightarrow x_{\mathcal{L}}^{K} = (\zeta \left\|x\right\|,\frac{x}{\zeta \left\|x\right\|}).
+\end{equation}
+Then, the exponential map $\mathrm{exp}^{K}_{x}:\mathcal{E}^n \rightarrow \mathcal{L}^{n+1}$ with curvature $K$ can be defined as: 
+\begin{equation}\label{equ:11}
+    \mathrm{exp}^{K}_{\mathcal{L}}: \mathbf{h}^{\zeta}_{x \mathcal{L}}=(\cosh{\zeta \left\|\mathbf{h}_x\right\|}, \sinh{\zeta \left\|\mathbf{h}_x\right\|} \frac{\mathbf{h}_x}{\zeta \left\|\mathbf{h}_x\right\|}), 
+\end{equation}
+where $\mathbf{h}^{\zeta}_{j \mathcal{L}}$ is the projection on hyperboloid of a node hidden state $h_v$. 
+
+For the hyperboloid (Lorentz) model, we consider the Lorentzian scalar product of a Riemannian manifold with curvature $K$ is:
+\begin{equation}\label{equ:6}
+    \langle x,x \rangle_\mathcal{L} : K x_0^2 + \sum_{i=1}^{n}{x_i^2} = K, 
+\end{equation}
+where $x_0 = \sqrt{1-\frac{x^2}{K}}$. 
+To make the calculation easier, we linearly approximate $x$ in Equation~\eqref{equ:6} to $x = \|x\|/\zeta$, where the $\zeta$ is the curvature parameter, given by $K = -\zeta^2 < 0, \zeta > 0$.
+
+Since we have given the variable curvature version of hyperbolic distance between node $i$ and node $j$ with curvature $K$, and the distance between the node-pair $(i, j)$ on hyperboloid by Equation~\eqref{equ:2}:
+\begin{equation}\label{equ:Hdist}
+    \mathbf{d}^{K}_{\mathcal{L}}(i,j) = \mathrm{arccosh}{(- \langle \mathbf{h}^{\zeta}_{i \mathcal{L}},\mathbf{h}^{\zeta}_{j \mathcal{L}})\rangle}_{\mathcal{L}}).
+\end{equation}
+
+\paragraph{Hyperbolic Attention Aggregation with Variable Curvature}
+We next discuss how to conduct the adaptive hyperbolic attention mechanism to aggregate node features by appropriate curvature. 
+
+The GNNs models usually use convolution layers or attention layers to aggregate node feature information. 
+As discussed in the previous Section~\ref{section 3}, our goal is to obtain an aggregation with variable curvature in hyperbolic space. 
+Therefore, we extend the hyperbolic attention network~\cite{HAtt}, and present a hyperbolic attention aggregation with variable curvature through the following steps.
+
+\textbf{Step-1: }
+Considering the variable curvature, given the feature vectors $\mathbf{h}_i$ and $\mathbf{h}_j$ of nodes $i$ and $j$ in Euclidean space, we perform self-attention on the nodes, and the hyperbolic attention weight $\alpha\left(\mathbf{h}_{i}, \mathbf{h}_{j}, K \right)$ can be calculated as follows:
+\begin{equation}
+    \alpha\left(\mathbf{h}_{i}, \mathbf{h}_{j}, K \right)=\mathrm{exp}\left(-\beta \mathbf{d}^{K}_{\mathcal{L}}(i,j)-b\right),
+\end{equation}
+where $\pi(\mathbf{h}_{i})$ is the hyperbolic embedding given by Equation~\eqref{equ:7}, and $\mathbf{d}^{\zeta}_{\mathrm{H}}(\cdot,\cdot)$ is the variable curvature hyperbolic distance given by Equation~\eqref{equ:Hdist}. 
+Then, we transform these node embeddings $\mathrm{exp}^{K}_{\mathcal{L}}(\mathbf{h})$ to the Klein model, which can represent the node embedding in the interior of the unit disk by Equation~\eqref{equ:11}. 
+The hyperbolic embedding of node $v$  in Klein model is defined as:
+\begin{equation}
+    \mathbf{h}^{\zeta}_{x \mathcal{L}} \rightarrow \mathbf{h}_{x \mathcal{K}}^{\zeta} = \frac{\sinh(\zeta \left\|\mathbf{h}_x\right\|) \mathbf{h}_x}{\zeta \left\|\mathbf{h}_x\right\| \cosh(\zeta \left\|\mathbf{h}_x\right\|)}. 
+\end{equation}
+
+\textbf{Step-2:} Then we can utilize the Einstein midpoint in hyperbolic space to compute the weight sum operation in Euclidean space: 
+\begin{equation}
+    \mathbf{h}_{i \mathcal{K}}^{\zeta} = \sum_{j}\left[\frac{\alpha_{i j} \gamma\left(\mathbf{h}_{j \mathcal{K}}^{\zeta}\right)}{\sum_{\ell} \alpha_{i \ell} \gamma\left(\mathbf{h}_{j \mathcal{K}}^{\zeta}\right)}\right] \mathbf{h}_{j \mathcal{K}}^{\zeta},
+\end{equation}
+where the Lorentz factors is $\gamma(\mathbf{h}_{j \mathcal{K}}^{\zeta})=\frac{1}{\sqrt{1-  \frac{\sinh^2(\zeta  \left\|\mathbf{h}_j\right\|)}{\cosh^2(\zeta \left\|\mathbf{h}_j\right\|)}    } }$. 
+
+\paragraph{Riemannian Optimization with Variable Curvature}
+Since the curvature is a variable parameter, the optimizer needs to be extended accordingly. 
+In the hyperboloid model, Riemannian-SGD (RSGD)~\cite{DBLP:conf/icml/NickelK18} is widely used for optimization. 
+In the following, we also present a variable curvature version of RSGD with curvature parameter $\zeta$. 
+\begin{equation}
+\begin{aligned}
+    \mathbf{h}^t & = g_{\theta_t}^{-1} \nabla f(\theta), \\ 
+    \mathrm{grad}f(\theta_t) & = f(\mathbf{h}^t) + \frac{\langle \mathbf{h}^t,\theta_t \rangle_{\mathcal{L}}}{\zeta^2}\theta_t,  \\ 
+    \theta_{t+1} & = \mathrm{exp}_{\theta_t}(-\eta \mathrm{grad}f(\theta_t)).
+\end{aligned}
+\end{equation}
+The initialized embeddings $\mathbf{h}^t$ are close to the origin of $\mathcal{H}^n$ by sampling from the uniform distribution $\mathcal{U}(-0.001, 0.001)$ and by setting $x_0 = \sqrt{1+\frac{x^2}{\zeta^2}}$ according to Equation~\eqref{equ:6}.
+
+\subsubsection{HGNN Agent}
+Given a graph $G$ with the adjacency matrix $A$ and the Euclidean feature $X$, the ﬁrst layer of HGNN maps from Euclidean to hyperbolic space, then the HGNN stacks multiple hyperbolic graph attention layers.  
+Each hyperbolic graph attention layer transforms and aggregates neighbor’s embeddings in hyperboloid model with different curvature, and outputs the hyperbolic embeddings as results.
+In the HGNN-Agent, the action is defined as whether to update the learned embeddings by taking the new curvature, and the reward is defined directly as performance changes for downstream tasks.
+
+\subsection{Adaptive Curvature Exploration Agent}
+Since the curvature determined the distance metric in hyperbolic space, it is difficult to update it as a learning parameter using back-propagation in the HGNN model. 
+Moreover, because of the properties of hyperbolic logarithmic mapping and Riemannian optimization, the updating of trainable curvature parameters is limited to a very small range during the learning process. 
+This problem makes it difficult to learn a good curvature parameter (In the Section~\ref{section 5}, we verify the performance of HGNN at different curvatures).
+To address this issue, we design an Adaptive Curvature Learning Agent (ACE-Agent) which utilizes the reinforcement learning algorithm to explore the optimal curvature parameter for each hyperbolic attention layer adaptively. 
+We design the learning module independently for the curvature parameter in each layer through the following two steps. 
+
+\textbf{Step-1: }Considering the computational efficiency and a wider exploration space, we define the action $a_{C}$ as adding or subtracting a fixed value $\Delta\zeta \in [0,1]$ to the curvature parameter. 
+We adopt an $\epsilon-greedy$ policy with an exploration probability $\epsilon$. 
+
+\textbf{Step-2: }Then we project the embeddings $\mathbf{h}^{t-1}_{H}$ of the $t-1$ epoch as the input into the hyperboloid manifold with the new curvature parameters:
+\begin{equation}
+    \boldsymbol{\mathbf{h}^t_{C}} \gets \mathrm{exp}^{K}_{\mathcal{L}}(\mathbf{h}^{t-1}_{H}, \zeta^{t}_{C}), 
+\end{equation}
+where $\mathrm{exp}^{K}_{\mathcal{L}}$ is the exponential mapping, $\boldsymbol{\mathbf{h}^{t-1}_{H}}$ is the embeddings of last epoch, and $\zeta^{t}_{C}$ is the new curvature parameter from \textbf{Step-1}. 
+We input $\mathbf{h}^t_{C}$ to the downstream task and get the reward. 
+
+\subsection{RAHGNN Architecture with Nash Q-Learning}
+In this section, we summarize the collaborative learning of the HGNN agent and the Curvature Learning agent based on reinforcement learning.
+
+Our goal is to converge the learning of the two agents to Nash equilibrium. 
+In other words, a single agent cannot update the learning result himself to improve the accuracy of the collaborative results in the downstream task at a Nash equilibrium.
+Similarly, we define the state, reward, and termination for the entire framework as follows: 
+\paragraph{State.} 
+The state $s^t$ at epoch $t$ is the current state of the hyperbolic embedded space. 
+Here we use the last updated optimal curvatures of two agents as states $s^t$:
+\begin{equation}
+    \mathbf{s}^t = (\zeta^t_{H}, \zeta^t_{C}),
+\end{equation}
+where $\zeta^t_{H}$, $\zeta^t_{C}$ are the current optimal curvatures of HGNN-Agent and ACE-Agent, respectively.  
+
+\paragraph{Action.} 
+We define the collaborative action $\mathbf{a}^t = (a^t_{H}, a^t_{C})$ for both agents based on current state. 
+The HGNN Agent decides whether to update the learned embeddings by taking the curvature from the ACE-Agent. 
+The ACE-Agent decides whether to adjust the curvature parameter.
+
+\paragraph{Reward.} 
+Since the HGNN agent and ACE-Agent are independent in the learning process, we define the reward function $reward(s_e, a_e)$ for each $a^t$ at $s^t$ directly based on the task performance:
+\begin{equation}
+\begin{aligned}
+    r^t = reward\left(s^t, a^t\right)= (r^t_{H}, r^t_{C}), 
+\end{aligned}
+\end{equation}
+where $r^t_{H}$ and $r^t_{C}$ are rewards of the HGNN agent and ACE-Agent at epoch $t$, respectively. 
+
+\paragraph{Termination.} 
+If the HGNN-Agent and the ACE-Agent have reached Nash equilibrium, the RL algorithm will stop, and the curvature parameter $\zeta$ will keep fixed during the next training process. 
+\begin{equation}
+\begin{aligned}
+    \pi_{H}^*(s'), \pi_{H}^*(s')_{C} \gets Nash(Q_{H}(s'), Q_{C}(s')).
+\end{aligned}
+\end{equation}
+It means that the RL algorithm finds the optimal curvature. 
+
+Since the optimization problem is to find the Nash equilibrium point of the two agents, we use Nash Q-learning~\cite{hu2003nash} to learn the MDP. 
+The Nash Q-learning optimization fits the Bellman optimality equation as below: 
+\begin{equation}
+\begin{aligned}
+    NashQ_i(s') ~~=~~ & \pi_{H}^*(s') \pi_{C}^*(s') Q_i(s'),\\
+    Q_i(s, a^t_{H}, a^t_{C}) \gets & Q_i(s, a^{t}_{H}, a^t_{C}) \\
+    & + \alpha(r^i_t + \gamma NashQ_i(s') - Q_i(s, a^{t}_{H}, a^t_{C})). 
+\end{aligned}
+\end{equation}
+
+In RAHGNN, the accuracy as the reward is given by the different downstream tasks. 
+For link prediction, we use the Fermi-Dirac decoder~\cite{Krioukov2010Hyperbolic,NickelK17Poincare} to compute the connection probability between two nodes:
+\begin{equation}
+\begin{aligned}
+    prob(i,j) = \left [ e^{ (\mathbf{d}^{K}_{\mathcal{L}}(i,j)^2 - r) / t} + 1 \right ]^{-1}, 
+\end{aligned}
+\end{equation}
+where $\mathbf{d}^{K}_{\mathcal{L}}$ is the hyperbolic distance in Equation~\eqref{equ:Hdist} and $r$, $t$ are hyper-parameters.
+For node classiﬁcation, we directly classify nodes on the hyperboloid manifold using the hyperbolic multi-class logistic regression~\cite{HNN:GaneaBH18}.
+
+% \begin{algorithm}
+% \LinesNumbered
+% \renewcommand{\algorithmicrequire}{\textbf{Input:}}
+% \renewcommand{\algorithmicensure}{\textbf{Output:}}
+% \caption{RAHGNN: Adaptive Hyperbolic Graph Neural Network by Multi-Agent Reinforcement Learning} 
+%     \begin{algorithmic}[1] 
+%         \Require Feature vectors and labels; Number of Epochs $E$; Initial curvatures for HGNN encoding layers $\boldsymbol{\zeta_0}$; 
+%         \Ensure Embeddings for the feature vectors.  
+    
+%         \State Initialize RAHGNN model with $\boldsymbol{\zeta_0}$ and set RL environment;
+        
+%         // Train model
+    
+%         \For{$t = 1, 2, \cdots, E$}
+%             \State Choose curvatures $(\zeta^t_{H}, \zeta^t_{C})$ based on current state; 
+%             \State Set $s' = (\boldsymbol{\zeta^{t}_{H}, \zeta^{t}_{C}})$ using $\epsilon-Greedy$ policy;
+    
+%             // Steps in RL environment with model training\\
+%             // Embedding, accuracy and reward of HGNN-Agent 
+%             \State $\boldsymbol{\mathbf{h}^t_{H}} \gets HGNN \ encoding \ output$
+%             \State $acc^{t}_{H} \gets Decode(\boldsymbol{\mathbf{h}^{t}_{H}})$
+%             \State $r_H^t \gets \Delta acc^{t}_{H} = acc^{t}_{H} - acc^{t-1}_{H}$
+            
+%             // Embedding, accuracy and reward of ACE-Agent
+%             \State $\boldsymbol{\mathbf{h}^t_{C}} \gets \mathrm{exp}^{K}_{\mathcal{L}}(\boldsymbol{\mathbf{h}^{t-1}_{H}}, \zeta^{t}_{C})$
+%             \State $acc^{t}_{C} \gets Decode(\boldsymbol{\mathbf{h}^t_{C}})$
+%             \State $r_C^t \gets \Delta acc^{t}_{C} = acc^{t}_{C} - acc^{t-1}_{C}$
+            
+%             // Calculate best policy for each agent
+%             \State $\pi_{H}^*(s'), \pi_{C}^*(s') \gets Nash(Q_{H}(s'), Q_{C}(s'))$
+%             \For{$i \in \{H, C\}$}
+            
+%                 // Update both agents using Nash Q-learning
+%                 \State $NashQ_i(s') = \pi_{H}^*(s') \pi_{C}^*(s') Q_i(s')$ 
+%                 \State $Q_i(s, a^t_{H}, a^t_{C}) \gets Q_i(s, a^{t}_{H}, a^t_{C}) + \alpha(r_i^t + \gamma NashQ_i(s') - Q_i(s, a^{t}_{H}, a^t_{C}))$
+%             \EndFor
+%             \State Save $\boldsymbol{\mathbf{h}^t_{H}}$ when $acc^t_H$ hits the best;
+%             \State Rollback to last epoch's model if $acc^{t}_{H}$ continue to decline;
+%         \EndFor
+%     \end{algorithmic}
+% \end{algorithm}
+
+
+\begin{algorithm}[t]
+\LinesNumbered
+\caption{RAHGNN: Adaptive Hyperbolic Graph Neural Network by Multi-Agent Reinforcement Learning} 
+\KwIn{Feature vectors and labels; Number of Epochs $E$; Initial curvatures for HGNN encoding layers $\boldsymbol{\zeta_0}$.}
+\KwOut{Embeddings for the feature vectors.}
+Initialize RAHGNN model with $\boldsymbol{\zeta_0}$ and set RL environment;\\
+\tcp{Train model;}
+\For{$t = 1, 2, \cdots, E$}{
+    Choose curvatures $(\zeta^t_{H}, \zeta^t_{C})$ based on current state;\\
+    Set $s' = (\boldsymbol{\zeta^{t}_{H}, \zeta^{t}_{C}})$ using $\epsilon-Greedy$ policy;\\
+    % \tcp{Steps in RL environment with model training;}
+    \tcp{Embedding, accuracy and reward of HGNN-Agent;}
+    $\boldsymbol{\mathbf{h}^t_{H}} \gets HGNN \ encoding \ output$\\
+    $acc^{t}_{H} \gets Decode(\boldsymbol{\mathbf{h}^{t}_{H}})$\\
+    $r_H^t \gets \Delta acc^{t}_{H} = acc^{t}_{H} - acc^{t-1}_{H}$\\
+    \tcp{Embedding, accuracy and reward of ACE-Agent;}
+    $\boldsymbol{\mathbf{h}^t_{C}} \gets \mathrm{exp}^{K}_{\mathcal{L}}(\boldsymbol{\mathbf{h}^{t-1}_{H}}, \zeta^{t}_{C})$\\
+    $acc^{t}_{C} \gets Decode(\boldsymbol{\mathbf{h}^t_{C}})$\\
+    $r_C^t \gets \Delta acc^{t}_{C} = acc^{t}_{C} - acc^{t-1}_{C}$\\
+    \tcp{Calculate best policy for each agent;}
+    $\pi_{H}^*(s'), \pi_{C}^*(s') \gets Nash(Q_{H}(s'), Q_{C}(s'))$\\
+    \For{$i \in \{H, C\}$}{
+        \tcp{Update both agents using Nash Q-learning}
+        $NashQ_i(s') = \pi_{H}^*(s') \pi_{C}^*(s') Q_i(s')$\\
+        $Q_i(s, a^t_{H}, a^t_{C}) \gets Q_i(s, a^{t}_{H}, a^t_{C}) + \alpha(r_i^t + \gamma NashQ_i(s') - Q_i(s, a^{t}_{H}, a^t_{C}))$\\
+    }
+    Save $\boldsymbol{\mathbf{h}^t_{H}}$ when $acc^t_H$ hits the best;\\
+    Rollback to last epoch's model if $acc^{t}_{H}$ continue to decline;
+}
+\end{algorithm}
+
+

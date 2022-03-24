@@ -1,0 +1,35 @@
+\section{Hyperbolic Geometric Models}
+Hyperbolic space commonly refers to manifolds with constant negative curvature and is used for modeling complex networks.
+In hyperbolic geometry, there are five common isometric models used to describe hyperbolic spaces~\cite{cannon1997hyperbolic}. 
+Among them, the Poincaré model, Hyperboloid (Lorenz) model, and Klein model have recently been used in machine learning for preserving different kinds of hierarchies in graphs~\cite{NickelK17Poincare,PoincareGlove,HNN:GaneaBH18,HGNN_Qi,HAtt}. 
+
+\subsection{Poincaré Ball Model}
+The Poincaré ball model is a $n$-dimensional model of hyperbolic geometry with nodes located in the unit ball interior, and the 2-dimensional is the Poincaré disk. 
+The distance on this manifold with standard negative constant curvature $K=-1$ is defined as: 
+\begin{equation}\label{equ:1}
+\begin{aligned}
+d_{p}(\mathbf{x}, \mathbf{y})=\operatorname{arccosh}\left(1+2 \frac{\|\mathbf{x}-\mathbf{y}\|^{2}}{\left(1-\|\mathbf{x}\|^{2}\right)\left(1-\|\mathbf{y}\|^{2}\right)}\right), 
+\end{aligned}
+\end{equation}
+where $\mathbf{x}$, $\mathbf{y}$ are the nodes inside the Poincaré Ball. 
+
+\subsection{Hyperboloid Model}
+The hyperboloid (Lorentz) model is a model of $n$-dimensional hyperbolic geometry as a manifold in the $(n+1)$-dimensional Minkowski space. 
+The hyperboloid model consists of $\mathcal{H}^n= \{ x\in \mathcal{R}^{n+1} \mid  \langle x,x \rangle_{\mathcal{M}} = K, x_{0}>0 \}$, where $\langle x,x \rangle_\mathcal{L}$ is the Lorentzian scalar product, $K$ is the curvature, and the distance $d_{\mathcal{H}}(x,y)$ on the hyperboloid model between two points $x$ and $y$ in hyperbolic space with standard hyperbolic curvature $K=-1$ is: 
+\begin{equation}
+\label{equ:2}
+\begin{aligned}
+     d_{\mathcal{H}}(\mathbf{x},\mathbf{y})= \langle \mathbf{x},\mathbf{y} \rangle_{\mathcal{L}} = \mathrm{arccosh}({x_0 y_0} - \sum_{i=1}^{n}{x_i y_i}), 
+\end{aligned}
+\end{equation}
+where  $\mathbf{x}$, $\mathbf{y}$ are the nodes inside the $(n+1)$-dimensional Minkowski space. 
+
+\subsection{Klein Model}
+Klein model is a projective model of hyperbolic geometry in which points are represented by the points in the interior of the unit disk (or ball), and lines are represented by the chords. 
+The Klein model is defined on $\mathcal{K}^n$ $= \{\mathbf{x} \in \mathcal{R}^n \mid \|\mathbf{x}\| < 1 \}$ , and it can be transformed between the hyperboloid model and the Klein model: 
+\begin{equation}\label{equ:3}
+\begin{aligned}
+    &\pi_{\mathcal{H} \to \mathcal{K}}(\mathbf{x})=\frac{(x_0,...,x_i)}{x_{0}}, \\
+    &\pi_{\mathcal{K} \to \mathcal{H}}(\mathbf{x})=\frac{1}{\sqrt{1-\| \mathbf{x} \|^2}}.
+\end{aligned}
+\end{equation}

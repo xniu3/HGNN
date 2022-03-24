@@ -1,0 +1,17 @@
+\section{Related Work}\label{section 2}
+% There have been many works that utilize GCNs to extract local features to preserve high-order structure patterns. 
+% \cite{AbuElHaija2019MixHopHG} mixes first-order and high-order feature representations of neighbors repeatedly in each layer. 
+% \cite{motif2019} selects a few motifs for each node for aggregation. 
+% \cite{Jin_Song_Shi_2020} captures complex structure patterns by anonymous walks. 
+% \cite{topic2020} uses topic models to pre-select anchors to discover representative structure patterns and guide the aggregation. 
+
+Hyperbolic geometric space was introduced into complex networks earlier to represent the small world and scale-free of complex networks~\cite{Krioukov2010Hyperbolic,papadopoulos2012popularity}. 
+In the real world, complex networks are generally tree-like networks and hyperbolic geometric space is used to represent two important properties of such networks: the exponential expansion of network scale and the network hierarchy~\cite{Krioukov2010Hyperbolic}. 
+With high capacity and hierarchical structure-preserving ability of hyperbolic space, it is recently introduced into graph neural networks~\cite{HGNN_Qi,HGCN_ChamiYRL19,HAT}. 
+To the best of our knowledge, only a few studies have considered the balance of topological structure and feature information of graph data. 
+
+\section{Conclusion}
+In this work, we proposed RAHGNN, a novel adaptive node embedding framework by reinforcement learning in hyperbolic geometric space, and we practice this framework based on the hyperboloid model. 
+For graphs of different hierarchical topologies, the adaptively selected curvature can provide a good trade-off and fusion between the hierarchy and features of different graph data. 
+Moreover, the curvature selection can also intuitively give a reasonable interpretation of model learning, reflecting the model preference to capture information between the structure and features of a graph. 
+The proposed RAHGNN is evaluated on datasets with different hierarchical topologies for different tasks, and the experiment results show the effectiveness of our approach. 
